@@ -3,9 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { getSupabase } from "@/lib/supabase";
-import { createPresignedUploadUrl, createMultipartUpload, createPresignedPartUrl } from "@/lib/r2";
 
-const CHUNK_SIZE = 100 * 1024 * 1024; // 100MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024; // 10GB
 
 export async function POST(request: NextRequest) {
@@ -17,7 +15,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No files provided" }, { status: 400 });
     }
 
-    // Validate file sizes
     for (const file of files) {
       if (file.size > MAX_FILE_SIZE) {
         return NextResponse.json(
@@ -38,6 +35,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (transferError || !transfer) {
+      console.error("Transfer insert error:", transferError);
       return NextResponse.json({ error: "Failed to create transfer" }, { status: 500 });
     }
 
@@ -46,7 +44,7 @@ export async function POST(request: NextRequest) {
         const r2Key = `${transfer.id}/${nanoid(8)}_${file.name}`;
         const contentType = file.type || "application/octet-stream";
 
-        await supabase.from("files").insert({
+        const { error: fileError } = await supabase.from("files").insert({
           transfer_id: transfer.id,
           filename: file.name,
           size_bytes: file.size,
@@ -54,36 +52,14 @@ export async function POST(request: NextRequest) {
           mime_type: contentType,
         });
 
-        // Use multipart upload for large files (>100MB)
-        if (file.size > CHUNK_SIZE) {
-          const uploadId = await createMultipartUpload(r2Key, contentType);
-          const totalParts = Math.ceil(file.size / CHUNK_SIZE);
-
-          // Generate presigned URLs for all parts
-          const partUrls = await Promise.all(
-            Array.from({ length: totalParts }, (_, i) =>
-              createPresignedPartUrl(r2Key, uploadId, i + 1)
-            )
-          );
-
-          return {
-            filename: file.name,
-            r2Key,
-            multipart: true,
-            uploadId,
-            chunkSize: CHUNK_SIZE,
-            totalParts,
-            partUrls,
-          };
+        if (fileError) {
+          console.error("File insert error:", fileError);
         }
 
-        // Single upload for small files
-        const uploadUrl = await createPresignedUploadUrl(r2Key, contentType);
         return {
           filename: file.name,
           r2Key,
           multipart: false,
-          uploadUrl,
         };
       })
     );
@@ -94,7 +70,8 @@ export async function POST(request: NextRequest) {
       expiryDays: days,
       uploadUrls,
     });
-  } catch {
+  } catch (err) {
+    console.error("Init error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
