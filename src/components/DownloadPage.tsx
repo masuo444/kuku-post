@@ -2,6 +2,7 @@
 
 import { useTranslations, useLocale } from "next-intl";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { formatFileSize, getFileIconType, getFileType } from "@/lib/utils";
 import { FileImageIcon, FileVideoIcon, FileDocIcon, FileGenericIcon, DownloadIcon } from "./Icons";
 
@@ -46,11 +47,12 @@ export function DownloadPage({ token }: Props) {
   );
 
   if (error) return (
-    <div className="min-h-screen bg-bg flex items-center justify-center px-5">
-      <div className="text-center">
-        <h1 className="font-heading text-lg font-bold text-ink mb-1">{error === "expired" ? t("expired") : t("notFound")}</h1>
-        <a href={`/${locale}`} className="text-[12px] text-accent hover:underline mt-3 inline-block">{locale === "ja" ? "トップに戻る" : "Back"}</a>
+    <div className="min-h-screen bg-bg flex flex-col items-center justify-center px-5">
+      <div style={{ animation: "float 4s ease-in-out infinite" }}>
+        <Image src="/kuku-purple.png" alt="KUKU" width={100} height={100} className="drop-shadow-lg mb-4" />
       </div>
+      <h1 className="font-heading text-lg font-bold text-ink mb-1">{error === "expired" ? t("expired") : t("notFound")}</h1>
+      <a href={`/${locale}`} className="text-[12px] text-accent hover:underline mt-3 inline-block">{locale === "ja" ? "トップに戻る" : "Back"}</a>
     </div>
   );
 
@@ -60,10 +62,15 @@ export function DownloadPage({ token }: Props) {
   const formattedExpiry = expiryDate.toLocaleDateString(locale === "ja" ? "ja-JP" : "en-US", { year: "numeric", month: "long", day: "numeric" });
 
   return (
-    <div className="min-h-screen bg-bg flex items-center justify-center px-5 py-12">
+    <div className="min-h-screen bg-gradient-to-b from-accent-soft/20 via-bg to-bg flex items-center justify-center px-5 py-12">
       <div className="w-full max-w-[460px] fade-up">
-        {/* ヘッダー */}
+        {/* キャラクター + ヘッダー */}
         <div className="text-center mb-6">
+          <div className="flex justify-center mb-3">
+            <div style={{ animation: "float 4s ease-in-out infinite" }}>
+              <Image src="/kuku-green.png" alt="KUKU" width={110} height={110} className="drop-shadow-lg" priority />
+            </div>
+          </div>
           <h1 className="font-heading text-xl font-bold text-ink tracking-tight">{t("title")}</h1>
           <p className="mt-1.5 text-[11px] text-ink-light tracking-wide">
             {t("fileCount", { count: files.length })}
@@ -74,8 +81,8 @@ export function DownloadPage({ token }: Props) {
           </p>
         </div>
 
-        {/* カード */}
-        <div className="rounded-2xl bg-surface border border-border/40 shadow-[0_1px_2px_rgba(0,0,0,0.03),0_4px_16px_rgba(0,0,0,0.03)]">
+        {/* ファイルカード */}
+        <div className="rounded-2xl bg-surface border border-border/40 shadow-[0_2px_4px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)]">
           <div className="p-5 divide-y divide-border/40">
             {files.map((file) => (
               <div key={file.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 group">
