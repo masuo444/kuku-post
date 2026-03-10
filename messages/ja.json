@@ -1,0 +1,42 @@
+{
+  "nav": {
+    "logo": "KUKU便"
+  },
+  "upload": {
+    "heroTitle": "樹木の里から、届けます。",
+    "heroAccent": "届けます。",
+    "heroSubtitle": "広告なし。登録なし。大切なデータを安全にお届けします。",
+    "dropzone": "ここにドラッグ&ドロップ",
+    "or": "または",
+    "selectFiles": "ファイルを選択",
+    "fileLimits": "最大 10GB / ファイル",
+    "expiry": "保存期間",
+    "period1": "1日",
+    "period3": "3日",
+    "period7": "7日",
+    "period30": "30日",
+    "uploadButton": "アップロードしてリンクを生成",
+    "uploading": "送信中…"
+  },
+  "complete": {
+    "title": "準備できました",
+    "subtitle": "リンクを相手に送ってください。{days}日間有効です。",
+    "copy": "コピー",
+    "copied": "コピーしました",
+    "files": "ファイル数",
+    "totalSize": "合計サイズ",
+    "expires": "有効期限",
+    "sendNew": "新しいファイルを送る"
+  },
+  "download": {
+    "title": "ファイルが届いています",
+    "fileCount": "{count}件",
+    "totalSize": "合計 {size}",
+    "daysRemaining": "残り{days}日",
+    "fileList": "ファイル",
+    "downloadAll": "すべてダウンロード ({size})",
+    "expireNotice": "このリンクは {date} に無効になります",
+    "expired": "このリンクは有効期限切れです",
+    "notFound": "ファイルが見つかりません"
+  }
+}

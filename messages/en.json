@@ -1,0 +1,42 @@
+{
+  "nav": {
+    "logo": "KUKU Post"
+  },
+  "upload": {
+    "heroTitle": "Delivered from the Forest.",
+    "heroAccent": "the Forest.",
+    "heroSubtitle": "No ads. No signup. Secure file delivery.",
+    "dropzone": "Drag & drop files here",
+    "or": "or",
+    "selectFiles": "Choose Files",
+    "fileLimits": "Up to 10GB per file",
+    "expiry": "Keep for",
+    "period1": "1D",
+    "period3": "3D",
+    "period7": "7D",
+    "period30": "30D",
+    "uploadButton": "Upload & Generate Link",
+    "uploading": "Sending…"
+  },
+  "complete": {
+    "title": "Ready to Share",
+    "subtitle": "Share this link. Valid for {days} days.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "files": "Files",
+    "totalSize": "Size",
+    "expires": "Expires",
+    "sendNew": "Send New Files"
+  },
+  "download": {
+    "title": "Your Files Are Ready",
+    "fileCount": "{count} files",
+    "totalSize": "Total {size}",
+    "daysRemaining": "{days} days left",
+    "fileList": "Files",
+    "downloadAll": "Download All ({size})",
+    "expireNotice": "This link expires on {date}",
+    "expired": "This link has expired",
+    "notFound": "Files not found"
+  }
+}
