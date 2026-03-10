@@ -36,13 +36,7 @@ export async function POST(request: NextRequest) {
 
     if (transferError || !transfer) {
       console.error("Transfer insert error:", transferError);
-      return NextResponse.json({
-        error: "Failed to create transfer",
-        detail: transferError?.message,
-        code: transferError?.code,
-        url: process.env.NEXT_PUBLIC_SUPABASE_URL ? "set" : "missing",
-        key: process.env.SUPABASE_SERVICE_ROLE_KEY ? "set" : "missing",
-      }, { status: 500 });
+      return NextResponse.json({ error: "Failed to create transfer" }, { status: 500 });
     }
 
     const uploadUrls = await Promise.all(
