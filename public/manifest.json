@@ -1,0 +1,21 @@
+{
+  "name": "KUKU-POST",
+  "short_name": "KUKU-POST",
+  "description": "樹木の里から、届けます。広告なし・登録なしのファイル転送サービス。",
+  "start_url": "/ja",
+  "display": "standalone",
+  "background_color": "#f7f5f0",
+  "theme_color": "#3B7D52",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
