@@ -155,36 +155,40 @@ export default function UploadPage() {
       </div>
 
       <div className="relative z-10">
-        {/* メインセクション */}
-        <section className="mx-auto max-w-[960px] px-6 pt-24 pb-12 max-sm:px-5 max-sm:pt-20">
-          <div className="flex items-end justify-center gap-6 max-sm:flex-col max-sm:items-center max-sm:gap-4">
-            {/* 左: キャラクター */}
-            <div className="shrink-0 max-sm:order-1" style={{ animation: "float 4s ease-in-out infinite" }}>
-              <Image
-                src="/kuku-boy.png"
-                alt="KUKU"
-                width={180}
-                height={180}
-                className="drop-shadow-[0_8px_24px_rgba(0,0,0,0.12)] max-sm:w-[120px] max-sm:h-auto"
-                priority
-              />
-            </div>
+        {/* ヒーロー */}
+        <section className="mx-auto max-w-2xl px-6 pt-28 pb-2 text-center max-sm:px-5 max-sm:pt-22">
+          <h1 className="font-heading text-[clamp(24px,5vw,40px)] font-bold leading-[1.2] tracking-tight text-ink fade-up">
+            {t("heroTitle").split(t("heroAccent"))[0]}
+            <span className="text-accent">{t("heroAccent")}</span>
+            {t("heroTitle").split(t("heroAccent"))[1] || ""}
+          </h1>
+          <p className="mt-2 text-[13px] text-ink-mid leading-relaxed max-w-sm mx-auto fade-up delay-1">
+            {t("heroSubtitle")}
+          </p>
+        </section>
 
-            {/* 右: テキスト + 吹き出し風 */}
-            <div className="max-sm:order-2 max-sm:text-center">
-              <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl px-6 py-4 shadow-sm border border-white/60 mb-1 max-sm:px-4 max-sm:py-3">
-                <h1 className="font-heading text-[clamp(22px,4vw,34px)] font-bold leading-[1.25] tracking-tight text-ink">
-                  {t("heroTitle").split(t("heroAccent"))[0]}
-                  <span className="text-accent">{t("heroAccent")}</span>
-                  {t("heroTitle").split(t("heroAccent"))[1] || ""}
-                </h1>
-                <p className="mt-1.5 text-[13px] text-ink-mid leading-relaxed">
-                  {t("heroSubtitle")}
-                </p>
-                {/* 吹き出し三角 */}
-                <div className="absolute -left-2 bottom-4 w-3 h-3 bg-white/80 border-l border-b border-white/60 rotate-45 max-sm:hidden" />
+        {/* キャラクター一列 */}
+        <section className="mx-auto max-w-[600px] px-5 py-6 fade-up delay-1">
+          <div className="flex items-end justify-center gap-3 max-sm:gap-1">
+            {[
+              { src: "/kuku-purple.png", size: 72, delay: "0s" },
+              { src: "/kuku-green.png", size: 90, delay: "0.5s" },
+              { src: "/kuku-boy.png", size: 110, delay: "0.2s" },
+              { src: "/kuku-pink.png", size: 80, delay: "0.8s" },
+              { src: "/kuku-blonde.png", size: 88, delay: "0.3s" },
+              { src: "/kuku-white.png", size: 72, delay: "0.6s" },
+            ].map((c) => (
+              <div key={c.src} className="shrink-0" style={{ animation: `float 3.5s ease-in-out ${c.delay} infinite` }}>
+                <Image
+                  src={c.src}
+                  alt="KUKU"
+                  width={c.size}
+                  height={c.size}
+                  className="drop-shadow-[0_4px_12px_rgba(0,0,0,0.10)] max-sm:w-[60%] max-sm:h-auto"
+                  priority
+                />
               </div>
-            </div>
+            ))}
           </div>
         </section>
 
