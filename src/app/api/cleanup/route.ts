@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
-import { deleteFiles } from "@/lib/storage";
+import { deleteObjects } from "@/lib/r2";
 
 export async function DELETE() {
   try {
@@ -25,9 +25,8 @@ export async function DELETE() {
 
     if (files && files.length > 0) {
       const keys = files.map((f) => f.r2_key);
-      // Delete in batches of 100
-      for (let i = 0; i < keys.length; i += 100) {
-        await deleteFiles(keys.slice(i, i + 100));
+      for (let i = 0; i < keys.length; i += 1000) {
+        await deleteObjects(keys.slice(i, i + 1000));
       }
     }
 

@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import archiver from "archiver";
 import { PassThrough, Readable } from "stream";
 import { getSupabase } from "@/lib/supabase";
-import { downloadFile } from "@/lib/storage";
+import { getObject } from "@/lib/r2";
 
 type RouteContext = { params: Promise<{ token: string }> };
 
@@ -41,24 +41,25 @@ export async function GET(request: NextRequest, context: RouteContext) {
         return NextResponse.json({ error: "File not found" }, { status: 404 });
       }
 
-      const result = await downloadFile(file.r2_key);
-      if (result.error || !result.data) {
+      const r2Response = await getObject(file.r2_key);
+      if (!r2Response.Body) {
         return NextResponse.json({ error: "File not available" }, { status: 500 });
       }
 
-      const arrayBuffer = await result.data.arrayBuffer();
+      const bodyStream = r2Response.Body as Readable;
+      const webStream = Readable.toWeb(bodyStream) as ReadableStream;
       const encodedFilename = encodeURIComponent(file.filename);
 
-      return new NextResponse(arrayBuffer, {
+      return new NextResponse(webStream, {
         headers: {
           "Content-Type": file.mime_type || "application/octet-stream",
           "Content-Disposition": `attachment; filename="${encodedFilename}"; filename*=UTF-8''${encodedFilename}`,
-          "Content-Length": String(file.size_bytes),
+          ...(file.size_bytes ? { "Content-Length": String(file.size_bytes) } : {}),
         },
       });
     }
 
-    // ZIPダウンロード（全ファイル）
+    // ZIPダウンロード
     const { data: files } = await supabase
       .from("files")
       .select("filename, r2_key")
@@ -73,15 +74,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
     archive.pipe(passThrough);
 
     for (const file of files) {
-      const result = await downloadFile(file.r2_key);
-      if (result.data) {
-        const buf = Buffer.from(await result.data.arrayBuffer());
-        archive.append(buf, { name: file.filename });
+      const r2Response = await getObject(file.r2_key);
+      if (r2Response.Body) {
+        const bodyStream = r2Response.Body as Readable;
+        archive.append(bodyStream, { name: file.filename });
       }
     }
 
     archive.finalize();
-
     const webStream = Readable.toWeb(passThrough) as ReadableStream;
 
     return new NextResponse(webStream, {

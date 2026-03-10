@@ -1,7 +1,10 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { uploadFile } from "@/lib/storage";
+import { r2 } from "@/lib/r2";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+
+const bucket = process.env.CF_R2_BUCKET_NAME!;
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +17,15 @@ export async function POST(request: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    await uploadFile(r2Key, buffer, file.type || "application/octet-stream");
+
+    await r2.send(
+      new PutObjectCommand({
+        Bucket: bucket,
+        Key: r2Key,
+        Body: buffer,
+        ContentType: file.type || "application/octet-stream",
+      })
+    );
 
     return NextResponse.json({ ok: true });
   } catch (err) {
