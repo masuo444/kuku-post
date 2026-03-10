@@ -2,13 +2,12 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
-import { getSupabase } from "@/lib/supabase";
+import { saveTransfer, TransferMeta } from "@/lib/metadata";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024; // 10GB
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = getSupabase();
     const { files, expiryDays } = await request.json();
 
     if (!files || !Array.isArray(files) || files.length === 0) {
@@ -25,50 +24,40 @@ export async function POST(request: NextRequest) {
     }
 
     const days = [1, 3, 7, 30].includes(expiryDays) ? expiryDays : 7;
+    const transferId = nanoid(12);
     const shareToken = nanoid(10);
     const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: transfer, error: transferError } = await supabase
-      .from("transfers")
-      .insert({ share_token: shareToken, expires_at: expiresAt })
-      .select("id")
-      .single();
+    const fileMetas = files.map((file: { name: string; size: number; type: string }) => {
+      const r2Key = `${transferId}/${nanoid(8)}_${file.name}`;
+      return {
+        filename: file.name,
+        sizeBytes: file.size,
+        mimeType: file.type || "application/octet-stream",
+        r2Key,
+      };
+    });
 
-    if (transferError || !transfer) {
-      console.error("Transfer insert error:", transferError);
-      return NextResponse.json({ error: "Failed to create transfer" }, { status: 500 });
-    }
+    const meta: TransferMeta = {
+      transferId,
+      shareToken,
+      expiresAt,
+      createdAt: new Date().toISOString(),
+      downloadCount: 0,
+      files: fileMetas,
+    };
 
-    const uploadUrls = await Promise.all(
-      files.map(async (file: { name: string; size: number; type: string }) => {
-        const r2Key = `${transfer.id}/${nanoid(8)}_${file.name}`;
-        const contentType = file.type || "application/octet-stream";
-
-        const { error: fileError } = await supabase.from("files").insert({
-          transfer_id: transfer.id,
-          filename: file.name,
-          size_bytes: file.size,
-          r2_key: r2Key,
-          mime_type: contentType,
-        });
-
-        if (fileError) {
-          console.error("File insert error:", fileError);
-        }
-
-        return {
-          filename: file.name,
-          r2Key,
-          multipart: false,
-        };
-      })
-    );
+    await saveTransfer(meta);
 
     return NextResponse.json({
-      transferId: transfer.id,
+      transferId,
       shareToken,
       expiryDays: days,
-      uploadUrls,
+      uploadUrls: fileMetas.map((f) => ({
+        filename: f.filename,
+        r2Key: f.r2Key,
+        multipart: false,
+      })),
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

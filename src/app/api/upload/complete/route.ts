@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { getTransferById } from "@/lib/metadata";
 import { completeMultipartUpload } from "@/lib/r2";
 
 type MultipartInfo = {
@@ -12,7 +12,6 @@ type MultipartInfo = {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = getSupabase();
     const { transferId, multipartUploads } = await request.json();
 
     if (!transferId) {
@@ -28,28 +27,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: transfer, error } = await supabase
-      .from("transfers")
-      .select("id, share_token, expires_at")
-      .eq("id", transferId)
-      .single();
+    const meta = await getTransferById(transferId);
 
-    if (error || !transfer) {
+    if (!meta) {
       return NextResponse.json({ error: "Transfer not found" }, { status: 404 });
     }
 
-    const { data: files } = await supabase
-      .from("files")
-      .select("filename, size_bytes")
-      .eq("transfer_id", transferId);
-
-    const totalSize = (files || []).reduce((sum, f) => sum + Number(f.size_bytes), 0);
+    const totalSize = meta.files.reduce((sum, f) => sum + f.sizeBytes, 0);
 
     return NextResponse.json({
-      shareToken: transfer.share_token,
-      fileCount: files?.length || 0,
+      shareToken: meta.shareToken,
+      fileCount: meta.files.length,
       totalSize,
-      expiresAt: transfer.expires_at,
+      expiresAt: meta.expiresAt,
     });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

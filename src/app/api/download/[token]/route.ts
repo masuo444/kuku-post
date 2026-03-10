@@ -1,50 +1,37 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { getTransferByToken, saveTransfer } from "@/lib/metadata";
 
 type RouteContext = { params: Promise<{ token: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
-    const supabase = getSupabase();
     const { token } = await context.params;
+    const meta = await getTransferByToken(token);
 
-    const { data: transfer, error } = await supabase
-      .from("transfers")
-      .select("id, share_token, expires_at, download_count, created_at")
-      .eq("share_token", token)
-      .single();
-
-    if (error || !transfer) {
+    if (!meta) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    if (new Date(transfer.expires_at) < new Date()) {
+    if (new Date(meta.expiresAt) < new Date()) {
       return NextResponse.json({ error: "Expired" }, { status: 410 });
     }
 
-    const { data: files } = await supabase
-      .from("files")
-      .select("id, filename, size_bytes, mime_type, r2_key")
-      .eq("transfer_id", transfer.id);
-
     // Increment download count
-    await supabase
-      .from("transfers")
-      .update({ download_count: transfer.download_count + 1 })
-      .eq("id", transfer.id);
+    meta.downloadCount += 1;
+    await saveTransfer(meta);
 
     return NextResponse.json({
-      files: (files || []).map((f) => ({
-        id: f.id,
+      files: meta.files.map((f) => ({
+        id: f.r2Key,
         filename: f.filename,
-        sizeBytes: f.size_bytes,
-        mimeType: f.mime_type,
-        r2Key: f.r2_key,
+        sizeBytes: f.sizeBytes,
+        mimeType: f.mimeType,
+        r2Key: f.r2Key,
       })),
-      expiresAt: transfer.expires_at,
-      createdAt: transfer.created_at,
+      expiresAt: meta.expiresAt,
+      createdAt: meta.createdAt,
     });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

@@ -9,25 +9,17 @@ import { PeriodSelector } from "@/components/PeriodSelector";
 import { UploadButton } from "@/components/UploadButton";
 import { WorldTree, RootLine } from "@/components/WorldTree";
 
-type SingleUploadInfo = {
+const PROXY_LIMIT = 4 * 1024 * 1024; // 4MB
+const MULTIPART_THRESHOLD = 100 * 1024 * 1024; // 100MB
+const PART_SIZE = 10 * 1024 * 1024; // 10MB per part
+
+type UploadUrlInfo = {
   filename: string;
   r2Key: string;
-  multipart: false;
-  uploadUrl: string;
+  multipart: boolean;
 };
 
-type MultipartUploadInfo = {
-  filename: string;
-  r2Key: string;
-  multipart: true;
-  uploadId: string;
-  chunkSize: number;
-  totalParts: number;
-  partUrls: string[];
-};
-
-type UploadInfo = SingleUploadInfo | MultipartUploadInfo;
-
+// Small files: proxy through Vercel
 async function uploadViaProxy(
   file: File,
   r2Key: string,
@@ -50,6 +42,112 @@ async function uploadViaProxy(
     xhr.onerror = () => reject(new Error("Upload error"));
     xhr.send(formData);
   });
+}
+
+// Medium files: single presigned PUT
+async function uploadDirect(
+  file: File,
+  r2Key: string,
+  onProgress: (pct: number) => void
+): Promise<void> {
+  const res = await fetch("/api/upload/presign", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ r2Key, contentType: file.type || "application/octet-stream" }),
+  });
+  if (!res.ok) throw new Error("Failed to get presigned URL");
+  const { url } = await res.json();
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) { onProgress(100); resolve(); }
+      else reject(new Error(`Direct upload failed: ${xhr.status}`));
+    };
+    xhr.onerror = () => reject(new Error("Direct upload error"));
+    xhr.send(file);
+  });
+}
+
+// Large files: multipart upload
+async function uploadMultipart(
+  file: File,
+  r2Key: string,
+  onProgress: (pct: number) => void
+): Promise<void> {
+  // 1. Create multipart upload
+  const createRes = await fetch("/api/upload/multipart", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "create",
+      r2Key,
+      contentType: file.type || "application/octet-stream",
+    }),
+  });
+  if (!createRes.ok) throw new Error("Failed to create multipart upload");
+  const { uploadId } = await createRes.json();
+
+  const totalParts = Math.ceil(file.size / PART_SIZE);
+  const parts: { PartNumber: number; ETag: string }[] = [];
+  let uploadedBytes = 0;
+
+  // 2. Upload each part
+  for (let i = 0; i < totalParts; i++) {
+    const partNumber = i + 1;
+    const start = i * PART_SIZE;
+    const end = Math.min(start + PART_SIZE, file.size);
+    const blob = file.slice(start, end);
+
+    // Get presigned URL for this part
+    const presignRes = await fetch("/api/upload/multipart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "presign-part", r2Key, uploadId, partNumber }),
+    });
+    if (!presignRes.ok) throw new Error(`Failed to presign part ${partNumber}`);
+    const { url } = await presignRes.json();
+
+    // Upload part
+    const partRes = await fetch(url, { method: "PUT", body: blob });
+    if (!partRes.ok) throw new Error(`Part ${partNumber} upload failed`);
+
+    const etag = partRes.headers.get("ETag");
+    if (!etag) throw new Error(`No ETag for part ${partNumber}`);
+    parts.push({ PartNumber: partNumber, ETag: etag });
+
+    uploadedBytes += (end - start);
+    onProgress(Math.round((uploadedBytes / file.size) * 100));
+  }
+
+  // 3. Complete multipart upload
+  const completeRes = await fetch("/api/upload/multipart", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "complete", r2Key, uploadId, parts }),
+  });
+  if (!completeRes.ok) throw new Error("Failed to complete multipart upload");
+  onProgress(100);
+}
+
+// Smart upload: choose strategy based on file size
+async function smartUpload(
+  file: File,
+  r2Key: string,
+  onProgress: (pct: number) => void
+): Promise<void> {
+  if (file.size <= PROXY_LIMIT) {
+    return uploadViaProxy(file, r2Key, onProgress);
+  } else if (file.size <= MULTIPART_THRESHOLD) {
+    return uploadDirect(file, r2Key, onProgress);
+  } else {
+    return uploadMultipart(file, r2Key, onProgress);
+  }
 }
 
 export default function UploadPage() {
@@ -84,13 +182,15 @@ export default function UploadPage() {
       });
       if (!initRes.ok) throw new Error("Init failed");
       const { transferId, uploadUrls } = await initRes.json();
-      // Upload files via server proxy
+
+      // Upload files with smart strategy
       await Promise.all(
-        (uploadUrls as UploadInfo[]).map(async (info, index) => {
+        (uploadUrls as UploadUrlInfo[]).map(async (info, index) => {
           const file = files[index].file;
-          await uploadViaProxy(file, info.r2Key, (pct) => updateProgress(index, pct));
+          await smartUpload(file, info.r2Key, (pct) => updateProgress(index, pct));
         })
       );
+
       const completeRes = await fetch("/api/upload/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
