@@ -161,41 +161,10 @@ export default function UploadPage() {
         <div className="absolute -top-[200px] left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full bg-gradient-to-b from-[#d4e6d1]/50 to-transparent blur-[100px]" />
       </div>
 
-      <div className="relative z-10 flex flex-col min-h-screen">
-        {/* 上部: ヒーロー + カード */}
-        <div className="flex-1 flex flex-col items-center justify-center px-5 pt-20 pb-4">
-          {/* タイトル */}
-          <div className="text-center mb-8 fade-up">
-            <h1 className="font-heading text-[clamp(26px,5.5vw,42px)] font-bold leading-[1.15] tracking-tight text-ink">
-              {t("heroTitle").split(t("heroAccent"))[0]}
-              <span className="text-accent">{t("heroAccent")}</span>
-              {t("heroTitle").split(t("heroAccent"))[1] || ""}
-            </h1>
-            <p className="mt-3 text-[13px] text-ink-mid leading-relaxed">
-              {t("heroSubtitle")}
-            </p>
-          </div>
-
-          {/* アップロードカード */}
-          <div className="w-full max-w-[480px] fade-up delay-1">
-            <div className="rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_8px_32px_rgba(0,0,0,0.06)] border border-black/[0.04] max-sm:p-5">
-              <DropZone onFilesSelected={handleFilesSelected} />
-              <FileList files={files} onRemove={handleRemove} />
-              <PeriodSelector selected={expiryDays} onChange={setExpiryDays} />
-              {error && <p className="mt-3 text-[12px] text-red-600 text-center">{error}</p>}
-              <UploadButton disabled={files.length === 0} loading={uploading} onClick={handleUpload} />
-            </div>
-          </div>
-        </div>
-
-        {/* 下部: キャラクターが地面に立ってる */}
-        <div className="relative mt-auto">
-          {/* 地面のライン */}
-          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-accent/20 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#eae7df] to-transparent" />
-
-          {/* キャラクター */}
-          <div className="flex items-end justify-center gap-2 px-4 max-sm:gap-0">
+      <div className="relative z-10">
+        {/* キャラクター */}
+        <section className="pt-20 pb-2 max-sm:pt-16 max-sm:pb-1 fade-up">
+          <div className="flex items-end justify-center gap-3 px-4 max-sm:gap-1">
             {characters.map((c) => (
               <div
                 key={c.src}
@@ -208,13 +177,40 @@ export default function UploadPage() {
                   width={0}
                   height={0}
                   sizes="100px"
-                  className="h-[100px] w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.08)] max-sm:h-[70px]"
+                  className="h-[90px] w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.08)] max-sm:h-[52px]"
                   priority
                 />
               </div>
             ))}
           </div>
-        </div>
+        </section>
+
+        {/* タイトル */}
+        <section className="text-center px-5 pt-4 pb-5 max-sm:pt-3 max-sm:pb-4 fade-up delay-1">
+          <h1 className="font-heading text-[clamp(22px,5vw,38px)] font-bold leading-[1.15] tracking-tight text-ink">
+            {t("heroTitle").split(t("heroAccent"))[0]}
+            <span className="text-accent">{t("heroAccent")}</span>
+            {t("heroTitle").split(t("heroAccent"))[1] || ""}
+          </h1>
+          <p className="mt-2 text-[13px] text-ink-mid leading-relaxed max-sm:text-[12px]">
+            {t("heroSubtitle")}
+          </p>
+        </section>
+
+        {/* アップロードカード */}
+        <section className="mx-auto max-w-[480px] px-5 pb-20 max-sm:pb-12 fade-up delay-2">
+          <div className="rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_8px_32px_rgba(0,0,0,0.06)] border border-black/[0.04] max-sm:p-4">
+            <DropZone onFilesSelected={handleFilesSelected} />
+            <FileList files={files} onRemove={handleRemove} />
+            <PeriodSelector selected={expiryDays} onChange={setExpiryDays} />
+            {error && <p className="mt-3 text-[12px] text-red-600 text-center">{error}</p>}
+            <UploadButton disabled={files.length === 0} loading={uploading} onClick={handleUpload} />
+          </div>
+        </section>
+
+        <footer className="text-center pb-6 max-sm:pb-4">
+          <p className="text-[10px] text-ink-light/40 tracking-widest uppercase">FOMUS KUKU</p>
+        </footer>
       </div>
     </main>
   );
