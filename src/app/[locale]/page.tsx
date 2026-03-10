@@ -12,6 +12,9 @@ import { WorldTree, RootLine } from "@/components/WorldTree";
 const PROXY_LIMIT = 4 * 1024 * 1024; // 4MB
 const MULTIPART_THRESHOLD = 100 * 1024 * 1024; // 100MB
 const PART_SIZE = 10 * 1024 * 1024; // 10MB per part
+const MAX_FILE_SIZE = 1 * 1024 * 1024 * 1024; // 1GB
+const MAX_FILES = 10;
+const MAX_TOTAL_SIZE = 2 * 1024 * 1024 * 1024; // 2GB
 
 type UploadUrlInfo = {
   filename: string;
@@ -157,9 +160,36 @@ export default function UploadPage() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [expiryDays, setExpiryDays] = useState(3);
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleFilesSelected = useCallback((newFiles: File[]) => {
-    setFiles((prev) => [...prev, ...newFiles.map((file) => ({ file, progress: 0 }))]);
+    setError(null);
+    setFiles((prev) => {
+      const combined = [...prev, ...newFiles.map((file) => ({ file, progress: 0 }))];
+
+      // Validate file count
+      if (combined.length > MAX_FILES) {
+        setError(`最大${MAX_FILES}個までです`);
+        return prev;
+      }
+
+      // Validate individual file size
+      for (const f of newFiles) {
+        if (f.size > MAX_FILE_SIZE) {
+          setError(`${f.name} は1GBを超えています`);
+          return prev;
+        }
+      }
+
+      // Validate total size
+      const total = combined.reduce((sum, f) => sum + f.file.size, 0);
+      if (total > MAX_TOTAL_SIZE) {
+        setError("合計サイズが2GBを超えています");
+        return prev;
+      }
+
+      return combined;
+    });
   }, []);
   const handleRemove = useCallback((index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
@@ -242,6 +272,9 @@ export default function UploadPage() {
             <DropZone onFilesSelected={handleFilesSelected} />
             <FileList files={files} onRemove={handleRemove} />
             <PeriodSelector selected={expiryDays} onChange={setExpiryDays} />
+            {error && (
+              <p className="mt-3 text-[12px] text-red-600 text-center">{error}</p>
+            )}
             <UploadButton disabled={files.length === 0} loading={uploading} onClick={handleUpload} />
           </div>
         </section>

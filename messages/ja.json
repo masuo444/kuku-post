@@ -9,7 +9,7 @@
     "dropzone": "ここにドラッグ&ドロップ",
     "or": "または",
     "selectFiles": "ファイルを選択",
-    "fileLimits": "最大 10GB / ファイル",
+    "fileLimits": "1GB/ファイル · 10個まで · 合計2GBまで",
     "expiry": "保存期間",
     "period1": "1日",
     "period3": "3日",

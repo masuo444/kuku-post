@@ -9,7 +9,7 @@
     "dropzone": "Drag & drop files here",
     "or": "or",
     "selectFiles": "Choose Files",
-    "fileLimits": "Up to 10GB per file",
+    "fileLimits": "1GB/file · 10 files · 2GB total",
     "expiry": "Keep for",
     "period1": "1D",
     "period3": "3D",

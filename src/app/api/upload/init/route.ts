@@ -4,7 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { saveTransfer, TransferMeta } from "@/lib/metadata";
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024; // 10GB
+const MAX_FILE_SIZE = 1 * 1024 * 1024 * 1024; // 1GB
+const MAX_FILES = 10;
+const MAX_TOTAL_SIZE = 2 * 1024 * 1024 * 1024; // 2GB
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,13 +16,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No files provided" }, { status: 400 });
     }
 
+    if (files.length > MAX_FILES) {
+      return NextResponse.json({ error: `Maximum ${MAX_FILES} files per upload` }, { status: 400 });
+    }
+
+    let totalSize = 0;
     for (const file of files) {
       if (file.size > MAX_FILE_SIZE) {
         return NextResponse.json(
-          { error: `File "${file.name}" exceeds 10GB limit` },
+          { error: `File "${file.name}" exceeds 1GB limit` },
           { status: 400 }
         );
       }
+      totalSize += file.size;
+    }
+
+    if (totalSize > MAX_TOTAL_SIZE) {
+      return NextResponse.json({ error: "Total size exceeds 2GB limit" }, { status: 400 });
     }
 
     const days = [1, 3].includes(expiryDays) ? expiryDays : 3;
