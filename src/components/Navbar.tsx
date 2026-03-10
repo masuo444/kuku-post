@@ -2,7 +2,7 @@
 
 import { useLocale } from "next-intl";
 import { useRouter, usePathname } from "next/navigation";
-import Image from "next/image";
+import { LeafIcon } from "./Icons";
 
 export function Navbar() {
   const locale = useLocale();
@@ -17,17 +17,13 @@ export function Navbar() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50">
-      <div className="mx-auto flex items-center justify-between px-6 py-3 max-w-4xl">
-        <a href={`/${locale}`} className="flex items-center gap-2 group">
-          <Image
-            src="/kuku-boy.png"
-            alt="KUKU"
-            width={28}
-            height={28}
-            className="transition-transform duration-300 group-hover:scale-110"
-          />
-          <span className="font-heading text-[15px] font-bold tracking-tight text-ink/80">
-            KUKU便
+      <div className="mx-auto flex items-center justify-between px-6 py-4 max-w-4xl">
+        <a href={`/${locale}`} className="flex items-center gap-1.5 group">
+          <span className="text-accent transition-transform duration-300 group-hover:rotate-12">
+            <LeafIcon className="w-4 h-4" />
+          </span>
+          <span className="font-heading text-[14px] font-bold tracking-[0.08em] uppercase text-ink/70">
+            KUKU<span className="text-accent">-</span>POST
           </span>
         </a>
 
