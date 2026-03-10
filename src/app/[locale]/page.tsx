@@ -9,50 +9,32 @@ import { FileList, FileItem } from "@/components/FileList";
 import { PeriodSelector } from "@/components/PeriodSelector";
 import { UploadButton } from "@/components/UploadButton";
 
-const PROXY_LIMIT = 4 * 1024 * 1024; // 4MB
-const MULTIPART_THRESHOLD = 100 * 1024 * 1024; // 100MB
-const PART_SIZE = 10 * 1024 * 1024; // 10MB per part
-const MAX_FILE_SIZE = 1 * 1024 * 1024 * 1024; // 1GB
+const PROXY_LIMIT = 4 * 1024 * 1024;
+const MULTIPART_THRESHOLD = 100 * 1024 * 1024;
+const PART_SIZE = 10 * 1024 * 1024;
+const MAX_FILE_SIZE = 1 * 1024 * 1024 * 1024;
 const MAX_FILES = 10;
-const MAX_TOTAL_SIZE = 2 * 1024 * 1024 * 1024; // 2GB
+const MAX_TOTAL_SIZE = 2 * 1024 * 1024 * 1024;
 
-type UploadUrlInfo = {
-  filename: string;
-  r2Key: string;
-  multipart: boolean;
-};
+type UploadUrlInfo = { filename: string; r2Key: string; multipart: boolean };
 
-async function uploadViaProxy(
-  file: File,
-  r2Key: string,
-  onProgress: (pct: number) => void
-): Promise<void> {
+async function uploadViaProxy(file: File, r2Key: string, onProgress: (pct: number) => void): Promise<void> {
   return new Promise((resolve, reject) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("r2Key", r2Key);
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "/api/upload/proxy");
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
-    };
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) { onProgress(100); resolve(); }
-      else reject(new Error(`Upload failed: ${xhr.status}`));
-    };
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100)); };
+    xhr.onload = () => { if (xhr.status >= 200 && xhr.status < 300) { onProgress(100); resolve(); } else reject(new Error(`Upload failed: ${xhr.status}`)); };
     xhr.onerror = () => reject(new Error("Upload error"));
     xhr.send(formData);
   });
 }
 
-async function uploadDirect(
-  file: File,
-  r2Key: string,
-  onProgress: (pct: number) => void
-): Promise<void> {
+async function uploadDirect(file: File, r2Key: string, onProgress: (pct: number) => void): Promise<void> {
   const res = await fetch("/api/upload/presign", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ r2Key, contentType: file.type || "application/octet-stream" }),
   });
   if (!res.ok) throw new Error("Failed to get presigned URL");
@@ -61,26 +43,16 @@ async function uploadDirect(
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", url);
     xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
-    };
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) { onProgress(100); resolve(); }
-      else reject(new Error(`Direct upload failed: ${xhr.status}`));
-    };
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100)); };
+    xhr.onload = () => { if (xhr.status >= 200 && xhr.status < 300) { onProgress(100); resolve(); } else reject(new Error(`Direct upload failed: ${xhr.status}`)); };
     xhr.onerror = () => reject(new Error("Direct upload error"));
     xhr.send(file);
   });
 }
 
-async function uploadMultipart(
-  file: File,
-  r2Key: string,
-  onProgress: (pct: number) => void
-): Promise<void> {
+async function uploadMultipart(file: File, r2Key: string, onProgress: (pct: number) => void): Promise<void> {
   const createRes = await fetch("/api/upload/multipart", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "create", r2Key, contentType: file.type || "application/octet-stream" }),
   });
   if (!createRes.ok) throw new Error("Failed to create multipart upload");
@@ -94,8 +66,7 @@ async function uploadMultipart(
     const end = Math.min(start + PART_SIZE, file.size);
     const blob = file.slice(start, end);
     const presignRes = await fetch("/api/upload/multipart", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "presign-part", r2Key, uploadId, partNumber }),
     });
     if (!presignRes.ok) throw new Error(`Failed to presign part ${partNumber}`);
@@ -109,19 +80,14 @@ async function uploadMultipart(
     onProgress(Math.round((uploadedBytes / file.size) * 100));
   }
   const completeRes = await fetch("/api/upload/multipart", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "complete", r2Key, uploadId, parts }),
   });
   if (!completeRes.ok) throw new Error("Failed to complete multipart upload");
   onProgress(100);
 }
 
-async function smartUpload(
-  file: File,
-  r2Key: string,
-  onProgress: (pct: number) => void
-): Promise<void> {
+async function smartUpload(file: File, r2Key: string, onProgress: (pct: number) => void): Promise<void> {
   if (file.size <= PROXY_LIMIT) return uploadViaProxy(file, r2Key, onProgress);
   else if (file.size <= MULTIPART_THRESHOLD) return uploadDirect(file, r2Key, onProgress);
   else return uploadMultipart(file, r2Key, onProgress);
@@ -140,30 +106,15 @@ export default function UploadPage() {
     setError(null);
     setFiles((prev) => {
       const combined = [...prev, ...newFiles.map((file) => ({ file, progress: 0 }))];
-      if (combined.length > MAX_FILES) {
-        setError(`最大${MAX_FILES}個までです`);
-        return prev;
-      }
-      for (const f of newFiles) {
-        if (f.size > MAX_FILE_SIZE) {
-          setError(`${f.name} は1GBを超えています`);
-          return prev;
-        }
-      }
+      if (combined.length > MAX_FILES) { setError(`最大${MAX_FILES}個までです`); return prev; }
+      for (const f of newFiles) { if (f.size > MAX_FILE_SIZE) { setError(`${f.name} は1GBを超えています`); return prev; } }
       const total = combined.reduce((sum, f) => sum + f.file.size, 0);
-      if (total > MAX_TOTAL_SIZE) {
-        setError("合計サイズが2GBを超えています");
-        return prev;
-      }
+      if (total > MAX_TOTAL_SIZE) { setError("合計サイズが2GBを超えています"); return prev; }
       return combined;
     });
   }, []);
 
-  const handleRemove = useCallback((index: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-    setError(null);
-  }, []);
-
+  const handleRemove = useCallback((index: number) => { setFiles((prev) => prev.filter((_, i) => i !== index)); setError(null); }, []);
   const updateProgress = useCallback((index: number, pct: number) => {
     setFiles((prev) => prev.map((f, i) => (i === index ? { ...f, progress: pct } : f)));
   }, []);
@@ -173,88 +124,83 @@ export default function UploadPage() {
     setUploading(true);
     try {
       const initRes = await fetch("/api/upload/init", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          files: files.map((f) => ({ name: f.file.name, size: f.file.size, type: f.file.type })),
-          expiryDays,
-        }),
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ files: files.map((f) => ({ name: f.file.name, size: f.file.size, type: f.file.type })), expiryDays }),
       });
       if (!initRes.ok) throw new Error("Init failed");
       const { transferId, uploadUrls } = await initRes.json();
       await Promise.all(
         (uploadUrls as UploadUrlInfo[]).map(async (info, index) => {
-          const file = files[index].file;
-          await smartUpload(file, info.r2Key, (pct) => updateProgress(index, pct));
+          await smartUpload(files[index].file, info.r2Key, (pct) => updateProgress(index, pct));
         })
       );
       const completeRes = await fetch("/api/upload/complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ transferId }),
       });
       if (!completeRes.ok) throw new Error("Complete failed");
       const { shareToken, fileCount, totalSize, expiresAt } = await completeRes.json();
       const params = new URLSearchParams({ token: shareToken, files: String(fileCount), size: String(totalSize), days: String(expiryDays), expires: expiresAt });
       router.push(`/${locale}/complete?${params.toString()}`);
-    } catch (err) {
-      console.error("Upload error:", err);
-      setUploading(false);
-    }
+    } catch (err) { console.error("Upload error:", err); setUploading(false); }
   }
 
   return (
     <main className="min-h-screen relative overflow-hidden">
-      {/* 背景グラデーション */}
-      <div className="absolute inset-0 bg-gradient-to-b from-accent-soft/30 via-bg to-bg pointer-events-none" />
+      {/* 背景 */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-0 right-0 h-[50vh] bg-gradient-to-b from-[#e8f0e3] to-transparent" />
+        <div className="absolute top-[10%] left-[10%] w-[300px] h-[300px] rounded-full bg-accent/[0.04] blur-[80px]" />
+        <div className="absolute top-[20%] right-[5%] w-[200px] h-[200px] rounded-full bg-[#f0e8d8]/40 blur-[60px]" />
+      </div>
 
-      {/* コンテンツ */}
       <div className="relative z-10">
-        {/* Hero + キャラクター */}
-        <section className="mx-auto max-w-2xl px-6 pt-28 pb-4 max-sm:px-5 max-sm:pt-24">
-          {/* キャラクター */}
-          <div className="flex justify-center mb-4 fade-up">
-            <div className="relative" style={{ animation: "float 4s ease-in-out infinite" }}>
+        {/* メインセクション */}
+        <section className="mx-auto max-w-[960px] px-6 pt-24 pb-12 max-sm:px-5 max-sm:pt-20">
+          <div className="flex items-end justify-center gap-6 max-sm:flex-col max-sm:items-center max-sm:gap-4">
+            {/* 左: キャラクター */}
+            <div className="shrink-0 max-sm:order-1" style={{ animation: "float 4s ease-in-out infinite" }}>
               <Image
                 src="/kuku-boy.png"
                 alt="KUKU"
-                width={140}
-                height={140}
-                className="drop-shadow-lg max-sm:w-[110px] max-sm:h-[110px]"
+                width={180}
+                height={180}
+                className="drop-shadow-[0_8px_24px_rgba(0,0,0,0.12)] max-sm:w-[120px] max-sm:h-auto"
                 priority
               />
             </div>
-          </div>
 
-          {/* タイトル */}
-          <div className="text-center fade-up delay-1">
-            <h1 className="font-heading text-[clamp(24px,5vw,38px)] font-bold leading-[1.2] tracking-tight text-ink">
-              {t("heroTitle").split(t("heroAccent"))[0]}
-              <span className="text-accent">{t("heroAccent")}</span>
-              {t("heroTitle").split(t("heroAccent"))[1] || ""}
-            </h1>
-            <p className="mt-2 text-[13px] text-ink-mid leading-relaxed max-w-xs mx-auto">
-              {t("heroSubtitle")}
-            </p>
+            {/* 右: テキスト + 吹き出し風 */}
+            <div className="max-sm:order-2 max-sm:text-center">
+              <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl px-6 py-4 shadow-sm border border-white/60 mb-1 max-sm:px-4 max-sm:py-3">
+                <h1 className="font-heading text-[clamp(22px,4vw,34px)] font-bold leading-[1.25] tracking-tight text-ink">
+                  {t("heroTitle").split(t("heroAccent"))[0]}
+                  <span className="text-accent">{t("heroAccent")}</span>
+                  {t("heroTitle").split(t("heroAccent"))[1] || ""}
+                </h1>
+                <p className="mt-1.5 text-[13px] text-ink-mid leading-relaxed">
+                  {t("heroSubtitle")}
+                </p>
+                {/* 吹き出し三角 */}
+                <div className="absolute -left-2 bottom-4 w-3 h-3 bg-white/80 border-l border-b border-white/60 rotate-45 max-sm:hidden" />
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* カード */}
-        <section className="mx-auto max-w-[500px] px-5 pb-24 mt-4">
-          <div className="rounded-2xl bg-surface p-7 shadow-[0_2px_4px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] border border-border/40 fade-up delay-2 max-sm:p-5">
+        {/* アップロードカード */}
+        <section className="mx-auto max-w-[520px] px-5 pb-20">
+          <div className="rounded-2xl bg-white/90 backdrop-blur-sm p-7 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_40px_rgba(0,0,0,0.06)] border border-white/60 fade-up max-sm:p-5">
             <DropZone onFilesSelected={handleFilesSelected} />
             <FileList files={files} onRemove={handleRemove} />
             <PeriodSelector selected={expiryDays} onChange={setExpiryDays} />
-            {error && (
-              <p className="mt-3 text-[12px] text-red-600 text-center">{error}</p>
-            )}
+            {error && <p className="mt-3 text-[12px] text-red-600 text-center">{error}</p>}
             <UploadButton disabled={files.length === 0} loading={uploading} onClick={handleUpload} />
           </div>
         </section>
 
-        {/* フッター */}
         <footer className="text-center pb-8">
-          <p className="text-[10px] text-ink-light/50 tracking-wider">FOMUS KUKU</p>
+          <p className="text-[10px] text-ink-light/40 tracking-widest uppercase">Powered by FOMUS KUKU</p>
         </footer>
       </div>
     </main>
