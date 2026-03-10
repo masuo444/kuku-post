@@ -93,6 +93,15 @@ async function smartUpload(file: File, r2Key: string, onProgress: (pct: number) 
   else return uploadMultipart(file, r2Key, onProgress);
 }
 
+const characters = [
+  { src: "/kuku-purple.png", delay: "0s" },
+  { src: "/kuku-green.png", delay: "0.6s" },
+  { src: "/kuku-boy.png", delay: "0.2s" },
+  { src: "/kuku-pink.png", delay: "0.9s" },
+  { src: "/kuku-blonde.png", delay: "0.4s" },
+  { src: "/kuku-white.png", delay: "0.7s" },
+];
+
 export default function UploadPage() {
   const t = useTranslations("upload");
   const locale = useLocale();
@@ -146,66 +155,66 @@ export default function UploadPage() {
   }
 
   return (
-    <main className="min-h-screen relative overflow-hidden">
-      {/* 背景 */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-0 right-0 h-[50vh] bg-gradient-to-b from-[#e8f0e3] to-transparent" />
-        <div className="absolute top-[10%] left-[10%] w-[300px] h-[300px] rounded-full bg-accent/[0.04] blur-[80px]" />
-        <div className="absolute top-[20%] right-[5%] w-[200px] h-[200px] rounded-full bg-[#f0e8d8]/40 blur-[60px]" />
+    <main className="min-h-screen relative overflow-hidden bg-[#f7f5f0]">
+      {/* 背景装飾 */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-[200px] left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full bg-gradient-to-b from-[#d4e6d1]/50 to-transparent blur-[100px]" />
       </div>
 
-      <div className="relative z-10">
-        {/* ヒーロー */}
-        <section className="mx-auto max-w-2xl px-6 pt-28 pb-2 text-center max-sm:px-5 max-sm:pt-22">
-          <h1 className="font-heading text-[clamp(24px,5vw,40px)] font-bold leading-[1.2] tracking-tight text-ink fade-up">
-            {t("heroTitle").split(t("heroAccent"))[0]}
-            <span className="text-accent">{t("heroAccent")}</span>
-            {t("heroTitle").split(t("heroAccent"))[1] || ""}
-          </h1>
-          <p className="mt-2 text-[13px] text-ink-mid leading-relaxed max-w-sm mx-auto fade-up delay-1">
-            {t("heroSubtitle")}
-          </p>
-        </section>
+      <div className="relative z-10 flex flex-col min-h-screen">
+        {/* 上部: ヒーロー + カード */}
+        <div className="flex-1 flex flex-col items-center justify-center px-5 pt-20 pb-4">
+          {/* タイトル */}
+          <div className="text-center mb-8 fade-up">
+            <h1 className="font-heading text-[clamp(26px,5.5vw,42px)] font-bold leading-[1.15] tracking-tight text-ink">
+              {t("heroTitle").split(t("heroAccent"))[0]}
+              <span className="text-accent">{t("heroAccent")}</span>
+              {t("heroTitle").split(t("heroAccent"))[1] || ""}
+            </h1>
+            <p className="mt-3 text-[13px] text-ink-mid leading-relaxed">
+              {t("heroSubtitle")}
+            </p>
+          </div>
 
-        {/* キャラクター一列 */}
-        <section className="mx-auto max-w-[600px] px-5 py-6 fade-up delay-1">
-          <div className="flex items-end justify-center gap-3 max-sm:gap-1">
-            {[
-              { src: "/kuku-purple.png", size: 72, delay: "0s" },
-              { src: "/kuku-green.png", size: 90, delay: "0.5s" },
-              { src: "/kuku-boy.png", size: 110, delay: "0.2s" },
-              { src: "/kuku-pink.png", size: 80, delay: "0.8s" },
-              { src: "/kuku-blonde.png", size: 88, delay: "0.3s" },
-              { src: "/kuku-white.png", size: 72, delay: "0.6s" },
-            ].map((c) => (
-              <div key={c.src} className="shrink-0" style={{ animation: `float 3.5s ease-in-out ${c.delay} infinite` }}>
+          {/* アップロードカード */}
+          <div className="w-full max-w-[480px] fade-up delay-1">
+            <div className="rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_8px_32px_rgba(0,0,0,0.06)] border border-black/[0.04] max-sm:p-5">
+              <DropZone onFilesSelected={handleFilesSelected} />
+              <FileList files={files} onRemove={handleRemove} />
+              <PeriodSelector selected={expiryDays} onChange={setExpiryDays} />
+              {error && <p className="mt-3 text-[12px] text-red-600 text-center">{error}</p>}
+              <UploadButton disabled={files.length === 0} loading={uploading} onClick={handleUpload} />
+            </div>
+          </div>
+        </div>
+
+        {/* 下部: キャラクターが地面に立ってる */}
+        <div className="relative mt-auto">
+          {/* 地面のライン */}
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-accent/20 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#eae7df] to-transparent" />
+
+          {/* キャラクター */}
+          <div className="flex items-end justify-center gap-2 px-4 max-sm:gap-0">
+            {characters.map((c) => (
+              <div
+                key={c.src}
+                className="shrink-0"
+                style={{ animation: `float 4s ease-in-out ${c.delay} infinite` }}
+              >
                 <Image
                   src={c.src}
                   alt="KUKU"
-                  width={c.size}
-                  height={c.size}
-                  className="drop-shadow-[0_4px_12px_rgba(0,0,0,0.10)] max-sm:w-[60%] max-sm:h-auto"
+                  width={0}
+                  height={0}
+                  sizes="100px"
+                  className="h-[100px] w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.08)] max-sm:h-[70px]"
                   priority
                 />
               </div>
             ))}
           </div>
-        </section>
-
-        {/* アップロードカード */}
-        <section className="mx-auto max-w-[520px] px-5 pb-20">
-          <div className="rounded-2xl bg-white/90 backdrop-blur-sm p-7 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_40px_rgba(0,0,0,0.06)] border border-white/60 fade-up max-sm:p-5">
-            <DropZone onFilesSelected={handleFilesSelected} />
-            <FileList files={files} onRemove={handleRemove} />
-            <PeriodSelector selected={expiryDays} onChange={setExpiryDays} />
-            {error && <p className="mt-3 text-[12px] text-red-600 text-center">{error}</p>}
-            <UploadButton disabled={files.length === 0} loading={uploading} onClick={handleUpload} />
-          </div>
-        </section>
-
-        <footer className="text-center pb-8">
-          <p className="text-[10px] text-ink-light/40 tracking-widest uppercase">Powered by FOMUS KUKU</p>
-        </footer>
+        </div>
       </div>
     </main>
   );
