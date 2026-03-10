@@ -4,7 +4,28 @@ import { notFound } from "next/navigation";
 import { Syne, DM_Sans } from "next/font/google";
 import { routing } from "../../../i18n/routing";
 import { Navbar } from "@/components/Navbar";
+import type { Metadata } from "next";
 import "../globals.css";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://kuku-post.vercel.app";
+
+export const metadata: Metadata = {
+  title: "KUKU便 - 樹木の里から、届けます。",
+  description: "広告なし。登録なし。大切なデータを安全にお届けします。無料ファイル転送サービス。",
+  openGraph: {
+    title: "KUKU便 - 樹木の里から、届けます。",
+    description: "広告なし。登録なし。大切なデータを安全にお届けします。",
+    siteName: "KUKU便",
+    images: [{ url: `${BASE_URL}/ogp.png`, width: 1200, height: 630 }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "KUKU便 - 樹木の里から、届けます。",
+    description: "広告なし。登録なし。大切なデータを安全にお届けします。",
+    images: [`${BASE_URL}/ogp.png`],
+  },
+};
 
 const syne = Syne({
   variable: "--font-syne",
