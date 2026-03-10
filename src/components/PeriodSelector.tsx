@@ -7,7 +7,7 @@ type Props = {
   onChange: (days: number) => void;
 };
 
-const periods = [1, 3, 7, 30] as const;
+const periods = [1, 3] as const;
 
 export function PeriodSelector({ selected, onChange }: Props) {
   const t = useTranslations("upload");

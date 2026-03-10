@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const days = [1, 3, 7, 30].includes(expiryDays) ? expiryDays : 7;
+    const days = [1, 3].includes(expiryDays) ? expiryDays : 3;
     const transferId = nanoid(12);
     const shareToken = nanoid(10);
     const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();

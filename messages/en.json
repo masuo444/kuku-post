@@ -13,8 +13,6 @@
     "expiry": "Keep for",
     "period1": "1D",
     "period3": "3D",
-    "period7": "7D",
-    "period30": "30D",
     "uploadButton": "Upload & Generate Link",
     "uploading": "Sending…"
   },

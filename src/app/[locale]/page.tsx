@@ -155,7 +155,7 @@ export default function UploadPage() {
   const locale = useLocale();
   const router = useRouter();
   const [files, setFiles] = useState<FileItem[]>([]);
-  const [expiryDays, setExpiryDays] = useState(7);
+  const [expiryDays, setExpiryDays] = useState(3);
   const [uploading, setUploading] = useState(false);
 
   const handleFilesSelected = useCallback((newFiles: File[]) => {
